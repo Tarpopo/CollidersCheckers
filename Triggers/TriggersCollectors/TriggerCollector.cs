@@ -7,25 +7,27 @@ public abstract class TriggerCollector<T> : BaseTriggerChecker
 {
     public event Action<T> OnObjectEnter;
     public event Action<T> OnObjectExit;
-    public bool HaveElements => _elements.Values.Count > 0;
-    public IEnumerable<T> Elements => _elements.Values;
-    private readonly Dictionary<int, T> _elements = new Dictionary<int, T>(5);
+    public event Action OnAllExit;
+    public bool HaveElements => _elements.Count > 0;
+    public IEnumerable<T> Elements => _elements;
+    private readonly HashSet<T> _elements = new HashSet<T>(20);
 
     protected override bool IsThisObject(GameObject gameObject) => false;
 
     protected override void OnEnter(GameObject gameObject)
     {
-        var component = GetComponent(gameObject);
-        _elements.Add(gameObject.GetInstanceID(), component);
+        if (TryGetComponent(gameObject, out var component) == false || _elements.Contains(component)) return;
+        _elements.Add(component);
         OnObjectEnter?.Invoke(component);
     }
 
     protected override void OnExit(GameObject gameObject)
     {
-        var instanceID = gameObject.GetInstanceID();
-        OnObjectExit?.Invoke(_elements[instanceID]);
-        _elements.Remove(instanceID);
+        if (TryGetComponent(gameObject, out var component) == false || _elements.Contains(component) == false) return;
+        _elements.Remove(component);
+        OnObjectExit?.Invoke(component);
+        if (HaveElements == false) OnAllExit?.Invoke();
     }
 
-    protected abstract T GetComponent(GameObject gameObject);
+    protected abstract bool TryGetComponent(GameObject gameObject, out T component);
 }

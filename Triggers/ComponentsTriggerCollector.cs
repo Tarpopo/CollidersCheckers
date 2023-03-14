@@ -11,6 +11,7 @@ namespace Triggers
 
         protected override bool IsThisObject(GameObject gameObject) => gameObject.TryGetComponent(out _interface);
 
-        protected override T GetComponent(GameObject gameObject) => gameObject.GetComponent<T>();
+        protected override bool TryGetComponent(GameObject gameObject, out T component) =>
+            gameObject.TryGetComponent(out component);
     }
 }
